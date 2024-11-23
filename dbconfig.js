@@ -1,11 +1,16 @@
 const { Sequelize } = require("sequelize");
 const mysql = require("mysql2/promise");
 
-const sequelize = new Sequelize("chatapp-api", "root", "", {
-  host: "localhost",
-  dialect: "mysql",
-  logging: false,
-});
+const sequelize = new Sequelize(
+  "chatapp-api",
+  process.env.DB_USER,
+  process.env.DB_PASSWORD,
+  {
+    host: "localhost",
+    dialect: "mysql",
+    logging: false,
+  }
+);
 
 async function createDatabase() {
   try {
