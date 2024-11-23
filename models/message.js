@@ -1,3 +1,6 @@
+const { Sequelize, DataTypes } = require("sequelize");
+const sequelize = require("../dbconfig");
+
 const Message = sequelize.define(
   "Message",
   {
@@ -33,3 +36,5 @@ const Message = sequelize.define(
     timestamps: true,
   }
 );
+
+module.exports = Message;

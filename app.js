@@ -3,6 +3,10 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const sequelize = require("./dbconfig");
+const Room = require("./models/room");
+const RoomParticipant = require("./models/roomParticipant");
+const User = require("./models/user");
+const Message = require("./models/message");
 const authRoutes = require("./routes/auth");
 const roomRoutes = require("./routes/room");
 app = express();
@@ -16,6 +20,25 @@ app.use(cors());
 
 app.use(authRoutes);
 app.use(roomRoutes);
+
+User.hasOne(Room, { foreignKey: "hostId", as: "hostedRooms" });
+Room.belongsTo(User, { foreignKey: "hostId", as: "host" });
+
+Room.hasMany(RoomParticipant, { foreignKey: "roomId", as: "participants" });
+RoomParticipant.belongsTo(Room, { foreignKey: "roomId", as: "room" });
+
+User.hasMany(RoomParticipant, {
+  foreignKey: "userId",
+  as: "roomParticipations",
+});
+RoomParticipant.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+Room.hasMany(Message, { foreignKey: "roomId", as: "messages" });
+Message.belongsTo(Room, { foreignKey: "roomId", as: "room" });
+
+User.hasMany(Message, { foreignKey: "senderId", as: "messages" });
+Message.belongsTo(User, { foreignKey: "senderId", as: "sender" });
+
 sequelize
   .sync({ force: false })
   .then(() => {

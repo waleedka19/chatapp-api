@@ -1,7 +1,6 @@
-const { where } = require("sequelize");
 const Room = require("../models/room");
 const RoomParticipant = require("../models/roomParticipant");
-
+const User = require("../models/user");
 exports.postRoom = async (req, res) => {
   const hostId = req.userId;
   try {
@@ -41,6 +40,25 @@ exports.deleteRoom = async (req, res) => {
     return res.status(200).json({ message: "Room deleted successfully" });
   } catch (error) {
     console.error("Error deleting room:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.getAllRooms = async (req, res) => {
+  try {
+    const rooms = await Room.findAll({
+      include: [
+        {
+          model: User,
+          as: "host",
+          attributes: ["id", "username"],
+        },
+      ],
+    });
+
+    return res.status(200).json({ rooms: rooms });
+  } catch (error) {
+    console.error("Error fetching rooms:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
