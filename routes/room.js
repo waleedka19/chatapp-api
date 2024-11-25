@@ -7,7 +7,9 @@ router.post("/create-room", isAuth, roomCntrl.postRoom);
 
 router.get("/rooms", isAuth, roomCntrl.getAllRooms);
 
-router.post("/join-room", isAuth);
+router.post("/join-room/:roomid", isAuth, roomCntrl.postJoinRoom);
+
+router.post("/leave-room", isAuth);
 
 router.delete("/delete-room/:roomid", isAuth, roomCntrl.deleteRoom);
 

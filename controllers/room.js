@@ -4,7 +4,9 @@ const User = require("../models/user");
 exports.postRoom = async (req, res) => {
   const hostId = req.userId;
   try {
-    const hasRoom = await Room.findOne({ where: { hostId: hostId } });
+    const hasRoom = await RoomParticipant.findOne({
+      where: { userId: hostId },
+    });
 
     if (hasRoom) {
       return res.status(400).json({ errMsg: "you have a room" });
@@ -59,6 +61,36 @@ exports.getAllRooms = async (req, res) => {
     return res.status(200).json({ rooms: rooms });
   } catch (error) {
     console.error("Error fetching rooms:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.postJoinRoom = async (req, res) => {
+  const userId = req.userId;
+  const roomid = req.params.roomid;
+
+  try {
+    const existingRoom = await RoomParticipant.findOne({ where: { userId } });
+    if (existingRoom) {
+      return res
+        .status(400)
+        .json({ message: "You are already in another room" });
+    }
+    const room = await Room.findByPk(roomid);
+    console.log(room);
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    await RoomParticipant.create({
+      roomId: roomid,
+      userId: userId,
+      role: "guest",
+    });
+
+    return res.status(200).json({ message: "Joined room successfully", room });
+  } catch (error) {
+    console.error("Error joinning rooms:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
