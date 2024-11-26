@@ -1,6 +1,7 @@
 const Room = require("../models/room");
 const RoomParticipant = require("../models/roomParticipant");
 const User = require("../models/user");
+const { Op } = require("sequelize");
 exports.postRoom = async (req, res) => {
   const hostId = req.userId;
   try {
@@ -67,7 +68,7 @@ exports.getAllRooms = async (req, res) => {
 
 exports.postJoinRoom = async (req, res) => {
   const userId = req.userId;
-  const roomid = req.params.roomid;
+  const roomid = req.body.roomid;
 
   try {
     const existingRoom = await RoomParticipant.findOne({ where: { userId } });
@@ -76,10 +77,21 @@ exports.postJoinRoom = async (req, res) => {
         .status(400)
         .json({ message: "You are already in another room" });
     }
+
     const room = await Room.findByPk(roomid);
     console.log(room);
     if (!room) {
       return res.status(404).json({ message: "Room not found" });
+    }
+    const guestCount = await RoomParticipant.count({
+      where: {
+        roomId: roomid,
+        role: "guest",
+      },
+    });
+
+    if (guestCount > 0) {
+      return res.status(400).json({ message: "Room is already full" });
     }
 
     await RoomParticipant.create({
@@ -91,6 +103,61 @@ exports.postJoinRoom = async (req, res) => {
     return res.status(200).json({ message: "Joined room successfully", room });
   } catch (error) {
     console.error("Error joinning rooms:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.getOneRoom = async (req, res) => {
+  const roomId = req.params.roomid;
+  const userId = req.userId;
+
+  try {
+    const room = await Room.findByPk(roomId);
+
+    if (!room) {
+      return res.status(404).json({ errMsg: "Room not found" });
+    }
+
+    const userRole = await RoomParticipant.findOne({
+      where: {
+        userId: userId,
+        roomId: roomId,
+        [Op.or]: [{ role: "host" }, { role: "guest" }],
+      },
+    });
+
+    if (!userRole) {
+      return res
+        .status(403)
+        .json({ errMsg: "You are not authorized to view this room" });
+    }
+
+    res.status(200).json({ room, userRole });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ errMsg: "Internal server error" });
+  }
+};
+
+exports.postLeaveRoom = async (req, res) => {
+  const userId = req.userId;
+  const roomId = req.params.roomid;
+  try {
+    const isJoined = await RoomParticipant.findOne({
+      where: { userId: userId, roomId: roomId },
+    });
+    if (!isJoined) {
+      return res.status(400).json({ message: "you are not in this room " });
+    }
+    await RoomParticipant.destroy({
+      where: { userId: userId, roomId: roomId },
+    });
+
+    return res
+      .status(200)
+      .json({ message: "You have left the room successfully" });
+  } catch (error) {
+    console.error("Error leaving the room:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };

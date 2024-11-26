@@ -42,8 +42,12 @@ Message.belongsTo(User, { foreignKey: "senderId", as: "sender" });
 sequelize
   .sync({ force: false })
   .then(() => {
-    app.listen(port, () => {
+    const server = app.listen(port, () => {
+      const io = require("socket.io")(server);
       console.log(`Server is running on port ${port}`);
+      io.on("connection", (socket) => {
+        console.log("client conectted");
+      });
     });
   })
   .catch((error) => console.error("Error syncing database:", error));

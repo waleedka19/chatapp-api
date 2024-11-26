@@ -7,12 +7,12 @@ router.post("/create-room", isAuth, roomCntrl.postRoom);
 
 router.get("/rooms", isAuth, roomCntrl.getAllRooms);
 
-router.post("/join-room/:roomid", isAuth, roomCntrl.postJoinRoom);
+router.post("/join-room", isAuth, roomCntrl.postJoinRoom);
 
-router.post("/leave-room", isAuth);
+router.post("/leave-room/:roomid", isAuth, roomCntrl.postLeaveRoom);
 
 router.delete("/delete-room/:roomid", isAuth, roomCntrl.deleteRoom);
 
-router.get("/room/:roomid");
+router.get("/room/:roomid", isAuth, roomCntrl.getOneRoom);
 
 module.exports = router;
