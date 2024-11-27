@@ -1,6 +1,8 @@
 const Room = require("../models/room");
 const RoomParticipant = require("../models/roomParticipant");
 const User = require("../models/user");
+const io = require("../socket");
+
 const { Op } = require("sequelize");
 exports.postRoom = async (req, res) => {
   const hostId = req.userId;
@@ -58,6 +60,7 @@ exports.getAllRooms = async (req, res) => {
         },
       ],
     });
+    io.getIo().emit("rooms", { action: "get", rooms: rooms });
 
     return res.status(200).json({ rooms: rooms });
   } catch (error) {

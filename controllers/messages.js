@@ -1,7 +1,7 @@
 const { Sequelize } = require("../dbconfig");
 const Room = require("../models/room");
-const RoomParticipant = require("../models/roomParticipant");
 const Message = require("../models/message");
+const io = require("../socket");
 
 exports.postMessage = async (req, res) => {
   const roomid = req.params.roomid;
@@ -22,6 +22,7 @@ exports.postMessage = async (req, res) => {
       senderId: userid,
       message: message,
     });
+    io.getIo().emit("message", { action: "send", message: sendMessage });
 
     return res.status(201).json({ msg: "message sent", data: sendMessage });
   } catch (error) {

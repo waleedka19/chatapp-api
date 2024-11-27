@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const multer = require("multer");
 const sequelize = require("./dbconfig");
 const Room = require("./models/room");
 const RoomParticipant = require("./models/roomParticipant");
@@ -10,9 +11,14 @@ const Message = require("./models/message");
 const authRoutes = require("./routes/auth");
 const roomRoutes = require("./routes/room");
 const messageRoutes = require("./routes/messages");
+const userRoutes = require("./routes/user");
+
 app = express();
 
 port = process.env.PORT;
+
+app.use("/uploads", express.static("uploads"));
+
 // Middleware to parse JSON bodies
 app.use(bodyParser.json());
 
@@ -22,6 +28,7 @@ app.use(cors());
 app.use(authRoutes);
 app.use(roomRoutes);
 app.use(messageRoutes);
+app.use(userRoutes);
 
 User.hasOne(Room, { foreignKey: "hostId", as: "hostedRooms" });
 Room.belongsTo(User, { foreignKey: "hostId", as: "host" });
