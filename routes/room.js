@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const authCntrl = require("../controllers/auth");
+
 const roomCntrl = require("../controllers/room");
 const isAuth = require("../middleware/isAuth");
 router.post("/create-room", isAuth, roomCntrl.postRoom);

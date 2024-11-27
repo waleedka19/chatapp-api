@@ -9,6 +9,7 @@ const User = require("./models/user");
 const Message = require("./models/message");
 const authRoutes = require("./routes/auth");
 const roomRoutes = require("./routes/room");
+const messageRoutes = require("./routes/messages");
 app = express();
 
 port = process.env.PORT;
@@ -20,6 +21,7 @@ app.use(cors());
 
 app.use(authRoutes);
 app.use(roomRoutes);
+app.use(messageRoutes);
 
 User.hasOne(Room, { foreignKey: "hostId", as: "hostedRooms" });
 Room.belongsTo(User, { foreignKey: "hostId", as: "host" });
@@ -43,7 +45,7 @@ sequelize
   .sync({ force: false })
   .then(() => {
     const server = app.listen(port, () => {
-      const io = require("socket.io")(server);
+      const io = require("./socket").init(server);
       console.log(`Server is running on port ${port}`);
       io.on("connection", (socket) => {
         console.log("client conectted");
