@@ -2,7 +2,6 @@ const { Sequelize } = require("../dbconfig");
 const Room = require("../models/room");
 const RoomParticipant = require("../models/roomParticipant");
 const Message = require("../models/message");
-const { where } = require("sequelize");
 
 exports.postMessage = async (req, res) => {
   const roomid = req.params.roomid;
@@ -35,6 +34,9 @@ exports.getAllMessages = async (req, res) => {
   const roomid = req.params.roomid;
 
   try {
+    if (!roomid) {
+      return res.status(400).json({ errMsg: "there is no room found " });
+    }
     const messages = await Message.findAll({
       where: { roomId: roomid },
       order: [["createdAt", "DESC"]],
