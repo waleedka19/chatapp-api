@@ -56,7 +56,7 @@ exports.getAllRooms = async (req, res) => {
         {
           model: User,
           as: "host",
-          attributes: ["id", "username"],
+          attributes: ["id", "username", "profilePicture"],
         },
       ],
     });
@@ -115,19 +115,28 @@ exports.getOneRoom = async (req, res) => {
   const userId = req.userId;
 
   try {
-    const room = await Room.findByPk(roomId);
+    const room = await Room.findOne({
+      where: { id: roomId },
+      include: [
+        {
+          model: RoomParticipant,
+          as: "participants",
+          include: {
+            model: User,
+            as: "user",
+            attributes: ["id", "username", "profilePicture"],
+          },
+        },
+      ],
+    });
 
     if (!room) {
       return res.status(404).json({ errMsg: "Room not found" });
     }
 
-    const userRole = await RoomParticipant.findOne({
-      where: {
-        userId: userId,
-        roomId: roomId,
-        [Op.or]: [{ role: "host" }, { role: "guest" }],
-      },
-    });
+    const userRole = room.participants.find(
+      (participant) => participant.userId === userId
+    );
 
     if (!userRole) {
       return res
@@ -135,7 +144,16 @@ exports.getOneRoom = async (req, res) => {
         .json({ errMsg: "You are not authorized to view this room" });
     }
 
-    res.status(200).json({ room, userRole });
+    res.status(200).json({
+      room,
+      userRole: userRole.role,
+      participants: room.participants.map((p) => ({
+        id: p.user.id,
+        username: p.user.username,
+        profilePicture: p.user.profilePicture,
+        role: p.role,
+      })),
+    });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ errMsg: "Internal server error" });

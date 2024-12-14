@@ -1,6 +1,7 @@
 const { Sequelize } = require("../dbconfig");
 const Room = require("../models/room");
 const Message = require("../models/message");
+const User = require("../models/user");
 const io = require("../socket");
 
 exports.postMessage = async (req, res) => {
@@ -22,9 +23,19 @@ exports.postMessage = async (req, res) => {
       senderId: userid,
       message: message,
     });
-    io.getIo().emit("message", { action: "send", message: sendMessage });
+    // Fetch sender details for real-time updates
+    const fullMessage = await Message.findOne({
+      where: { id: sendMessage.id },
+      include: {
+        model: User,
+        as: "sender",
+        attributes: ["id", "username", "profilePicture"],
+      },
+    });
 
-    return res.status(201).json({ msg: "message sent", data: sendMessage });
+    io.getIo().emit("message", { action: "send", message: fullMessage });
+
+    return res.status(201).json({ msg: "message sent", data: fullMessage });
   } catch (error) {
     console.error("Error during sending message :", error);
     return res.status(500).json({ errMsg: "Internal server error" });
@@ -36,20 +47,29 @@ exports.getAllMessages = async (req, res) => {
 
   try {
     if (!roomid) {
-      return res.status(400).json({ errMsg: "there is no room found " });
+      return res.status(400).json({ errMsg: "Room ID is required" });
     }
+
+    // Fetch messages with sender details
     const messages = await Message.findAll({
       where: { roomId: roomid },
-      order: [["createdAt", "DESC"]],
+      include: {
+        model: User,
+        as: "sender",
+        attributes: ["id", "username", "profilePicture"],
+      },
+      order: [["createdAt", "ASC"]],
     });
-    if (!messages) {
+
+    if (!messages.length) {
       return res
         .status(200)
-        .json({ message: "Send your first message in the room " });
+        .json({ message: "No messages found", messages: [] });
     }
-    return res.status(200).json({ messages: messages });
+
+    return res.status(200).json({ messages });
   } catch (error) {
-    console.error("Error during geeting messages :", error);
+    console.error("Error fetching messages:", error);
     return res.status(500).json({ errMsg: "Internal server error" });
   }
 };
