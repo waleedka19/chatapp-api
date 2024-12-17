@@ -2,6 +2,8 @@ const { Sequelize } = require("../dbconfig");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
+const RoomParticipant = require("../models/roomParticipant");
+
 exports.postSignup = async (req, res) => {
   const email = req.body.email;
   const username = req.body.username;
@@ -47,7 +49,15 @@ exports.postLogin = async (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   try {
-    const user = await User.findOne({ where: { email: email } });
+    const user = await User.findOne({
+      where: { email: email },
+      include: [
+        {
+          model: RoomParticipant,
+          as: "roomParticipations",
+        },
+      ],
+    });
 
     if (!user) {
       return res
@@ -58,10 +68,18 @@ exports.postLogin = async (req, res) => {
     if (!checkpassword) {
       return res.status(400).json({ errMsg: "Wrong password" });
     }
+    const roomParticipations = user.roomParticipations.map((participation) => ({
+      roomId: participation.roomId,
+      role: participation.role,
+      joinedAt: participation.joinedAt,
+    }));
+
     const token = jwt.sign(
       {
         id: user.id,
         username: user.username,
+        profilepic: user.profilePicture,
+        rooms: roomParticipations,
       },
       process.env.TOKEN_SECRET,
       {
